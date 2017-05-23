@@ -34,7 +34,7 @@ _MS_ACCESS_TYPES = {
     'DATETIME',
     'TEXT',
     'MEMO',
-    'PRIMARY', # CUSTOM Type for handling AUTOINCREMENT
+    'PRIMARY',  # CUSTOM Type for handling AUTOINCREMENT
 }
 
 SCHEMA_FILE = 'schema.ini'
@@ -65,9 +65,9 @@ def _push_access_db(temp_dir, text_file, data_columns,
                   data_columns,
                   header_columns,
                   dtype, sep, append)
-    with AccessDBConnection(path, overwrite) as con, SchemaWriter(temp_dir, 
-                           text_file, data_columns, header_columns, 
-                           dtype, sep, delete) as schema:
+    with AccessDBConnection(path, overwrite) as con,\
+        SchemaWriter(temp_dir, text_file, data_columns,
+                     header_columns, dtype, sep, delete) as schema:
         cursor = con.cursor()
         schema.write()
         if not append:
@@ -95,7 +95,7 @@ class SchemaWriter(object):
         self.sep = sep
         self.path = os.path.join(self.temp_dir, SCHEMA_FILE)
         self.delete = delete
-    
+
     def __enter__(self):
         self.fp = open(self.path, 'w')
         return self
@@ -106,24 +106,26 @@ class SchemaWriter(object):
             shutil.rmtree(self.temp_dir)
         else:
             os.unlink(self.path)
-        
 
     def formater(self):
         yield '[%s]' % self.text_file
         yield 'ColNameHeader=True'
         yield 'Format=%s' % _text_formater(self.sep)
-        self.dcols = {col: ('Col%s' % (i + 1)) for i, col in enumerate(self.df_columns)}
+        self.dcols = {col: ('Col%s' % (i + 1))
+                      for i, col in enumerate(self.df_columns)}
         if not isinstance(self.dtype, dict):
             self.dtype = {}
         for col in self.df_columns:
             ctype = self.dtype.get(col, 'text').upper()
             if ctype not in _MS_ACCESS_TYPES:
-                raise DataTypeNotFound('Provided Data Type Not Found %s' % ctype)
+                raise DataTypeNotFound(
+                    'Provided Data Type Not Found %s' % ctype)
             if ctype == 'PRIMARY':
                 ctype = 'TEXT'
-            yield '{c_col}="{d_col}" {c_type}'.format(c_col=self.dcols[col],
-                                                      d_col=col,
-                                                      c_type=ctype.capitalize())
+            yield '{c_col}="{d_col}" {c_type}'.format(
+                                                c_col=self.dcols[col],
+                                                d_col=col,
+                                                c_type=ctype.capitalize())
 
     def write(self):
         for line in self.formater():
@@ -181,8 +183,10 @@ class Table(object):
         return '(%s)' % ','.join(self.formater())
 
     def create_query(self):
-        return "CREATE TABLE {table_name}{columns}".format(table_name=self.table_name,
-                                                            columns=self.built_columns())
+        return "CREATE TABLE {table_name}{columns}".format(
+                                            table_name=self.table_name,
+                                            columns=self.built_columns())
+
     @staticmethod
     def required_columns(cols):
         return ','.join('`%s`' % c for c in cols)
@@ -201,7 +205,8 @@ class Table(object):
                        text_file=self.text_file,
                        columns=self.required_columns(custom_columns),
                        required_cols=self.required_columns(columns),
-                       table_name=self.table_name, separator=_text_formater(self.sep))
+                       table_name=self.table_name,
+                       separator=_text_formater(self.sep))
 
 
 class AccessDBConnection(object):
@@ -212,7 +217,8 @@ class AccessDBConnection(object):
     def __enter__(self):
         if not os.path.isfile(self.db_path) or self.overwrite:
             create(self.db_path)
-        odbc_conn_str = 'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%s' % (self.db_path)
+        odbc_conn_str = '''DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};
+                           DBQ=%s''' % (self.db_path)
         self.con = odbc.connect(odbc_conn_str)
         return self.con
 
@@ -232,7 +238,7 @@ def to_accessdb(self, path, table_name,
     _push_access_db(temp_dir, text_file,
                     self.columns.tolist(),
                     header_columns, dtype, path, table_name,
-                    sep, append, overwrite,'folder')
+                    sep, append, overwrite, 'folder')
 
 
 def create_accessdb(path, text_path, table_name,
