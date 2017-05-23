@@ -43,5 +43,5 @@ How to Use:
 Note:
 -----------
 1) It will create text file if you are using pandas dataframe to create Access Database,
-   But the file will be delete after completion of process.
+   But the file will be deleted after completion of process.
 2) It supports only for Windows.
