@@ -65,15 +65,22 @@ def _push_access_db(temp_dir, text_file, data_columns,
                   data_columns,
                   header_columns,
                   dtype, sep, append)
-    with SchemaWriter(temp_dir, text_file, data_columns,
-                      header_columns, dtype, sep) as schema:
-        schema.write()
-    with AccessDBConnection(path, overwrite, temp_dir, delete) as con:
-        cursor = con.cursor()
-        if not append:
-            cursor.execute(table.create_query())
-        cursor.execute(table.insert_query())
-        con.commit()
+    schema_file = os.path.join(temp_dir, SCHEMA_FILE)
+    try:
+        with SchemaWriter(temp_dir, text_file, data_columns,
+                          header_columns, dtype, sep, schema_file) as schema:
+            schema.write()
+        with AccessDBConnection(path, overwrite) as con:
+            cursor = con.cursor()
+            if not append:
+                cursor.execute(table.create_query())
+            cursor.execute(table.insert_query())
+            con.commit()
+    finally:
+        if delete == 'folder':
+            shutil.rmtree(temp_dir)
+        else:
+            os.unlink(schema_file)
 
 
 def _get_random_file():
@@ -86,14 +93,14 @@ class DataTypeNotFound(Exception):
 
 class SchemaWriter(object):
     def __init__(self, temp_dir, text_file, df_columns,
-                 columns, dtype, sep):
+                 columns, dtype, sep, schema_file):
         self.temp_dir = temp_dir
         self.text_file = text_file
         self.df_columns = df_columns
         self.columns = columns
         self.dtype = dtype
         self.sep = sep
-        self.path = os.path.join(self.temp_dir, SCHEMA_FILE)
+        self.path = schema_file
 
     def __enter__(self):
         self.fp = open(self.path, 'w')
@@ -205,12 +212,9 @@ class Table(object):
 
 
 class AccessDBConnection(object):
-    def __init__(self, db_path, overwrite, temp_dir, delete):
+    def __init__(self, db_path, overwrite):
         self.overwrite = overwrite
         self.db_path = _stringify_path(db_path)
-        self.temp_dir = temp_dir
-        self.path = os.path.join(self.temp_dir, SCHEMA_FILE)
-        self.delete = delete
 
     def __enter__(self):
         if not os.path.isfile(self.db_path) or self.overwrite:
@@ -222,10 +226,6 @@ class AccessDBConnection(object):
 
     def __exit__(self, *args):
         self.con.close()
-        if self.delete == 'folder':
-            shutil.rmtree(self.temp_dir)
-        else:
-            os.unlink(self.path)
 
 
 def to_accessdb(self, path, table_name,
