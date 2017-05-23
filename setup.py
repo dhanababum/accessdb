@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
     name='accessdb',
     packages=['accessdb'],
-    version='0.1',
+    version='0.2',
     description='Fast way to create Access Database',
     author='Dhana Babu',
     author_email='dhana36.m@gmail.com',
