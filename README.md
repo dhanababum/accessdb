@@ -1,12 +1,12 @@
 Why I created this package ?
 ----------------------------
-1) One by one insertion into Access DB, But it takes too much time to insert 100k 
+1) One by one insertion into Access DB, But it takes too much time to insert 100k
 records,
 ```python
     cursor.execute("INSERT STATEMENT")
     cursor.commit()
 ```
-    
+
 2) Bulk way insertion into Access DB and it is fast if you compare with above one,
 But even it is very slow from https://github.com/mkleehammer/pyodbc/issues/120
 ```python
@@ -39,6 +39,10 @@ How to Use:
     # create_accessdb(<DB_PATH>, <TEXT_FILE_PATH>, <TABLE_NAME>)
     create_accessdb(r'C:\Users\<user>\Desktop\test.accdb', r'C:\Users\<user>\Documents\test.text', 'SAMPLE')
 ```
+
+Installation:
+-------------
+    pip install accessdb
 
 Note:
 -----------
