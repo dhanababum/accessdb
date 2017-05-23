@@ -59,21 +59,17 @@ def _stringify_path(db_path):
 
 def _push_access_db(temp_dir, text_file, data_columns,
                     header_columns, dtype, path, table_name, sep,
-                    append, overwrite):
-    schema = SchemaWriter(temp_dir,
-                          text_file,
-                          data_columns,
-                          header_columns,
-                          dtype, sep)
-    schema.write()
+                    append, overwrite, delete='file'):
     table = Table(temp_dir, text_file,
                   table_name,
                   data_columns,
                   header_columns,
                   dtype, sep, append)
-    with AccessDBConnection(path, overwrite) as con:
+    with AccessDBConnection(path, overwrite) as con, SchemaWriter(temp_dir, 
+                           text_file, data_columns, header_columns, 
+                           dtype, sep, delete) as schema:
         cursor = con.cursor()
-
+        schema.write()
         if not append:
             cursor.execute(table.create_query())
         cursor.execute(table.insert_query())
@@ -90,13 +86,27 @@ class DataTypeNotFound(Exception):
 
 class SchemaWriter(object):
     def __init__(self, temp_dir, text_file, df_columns,
-                 columns, dtype, sep):
+                 columns, dtype, sep, delete):
         self.temp_dir = temp_dir
         self.text_file = text_file
         self.df_columns = df_columns
         self.columns = columns
         self.dtype = dtype
         self.sep = sep
+        self.path = os.path.join(self.temp_dir, SCHEMA_FILE)
+        self.delete = delete
+    
+    def __enter__(self):
+        self.fp = open(self.path, 'w')
+        return self
+
+    def __exit__(self, *args):
+        self.fp.close()
+        if self.delete == 'folder':
+            shutil.rmtree(self.temp_dir)
+        else:
+            os.unlink(self.path)
+        
 
     def formater(self):
         yield '[%s]' % self.text_file
@@ -116,11 +126,9 @@ class SchemaWriter(object):
                                                       c_type=ctype.capitalize())
 
     def write(self):
-        path = os.path.join(self.temp_dir, SCHEMA_FILE)
-        with open(path, 'w') as fp:
-            for line in self.formater():
-                fp.write(line)
-                fp.write('\n')
+        for line in self.formater():
+            self.fp.write(line)
+            self.fp.write('\n')
 
 
 class Table(object):
@@ -224,8 +232,7 @@ def to_accessdb(self, path, table_name,
     _push_access_db(temp_dir, text_file,
                     self.columns.tolist(),
                     header_columns, dtype, path, table_name,
-                    sep, append, overwrite)
-    shutil.rmtree(temp_dir)
+                    sep, append, overwrite,'folder')
 
 
 def create_accessdb(path, text_path, table_name,
@@ -238,4 +245,3 @@ def create_accessdb(path, text_path, table_name,
                     file_columns,
                     header_columns, dtype, path, table_name,
                     sep, append, overwrite)
-    os.unlink(os.path.join(temp_dir, SCHEMA_FILE))
