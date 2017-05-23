@@ -28,14 +28,14 @@ How to Use:
 -----------
 1) If you have pandas dataframe you can follow bellow example
 ```python
-    from accessdb import utils
+    import accessdb
     # your dataframe
     # df.to_accessdb(<DB_PATH>, <TABLE_NAME>)
     df.to_accessdb(r'C:\Users\<user>\Desktop\test.accdb', 'SAMPLE')
 ```
 2) If you have text file you can follow bellow example
 ```python
-    from accessdb.utils import create_accessdb
+    from accessdb import create_accessdb
     # create_accessdb(<DB_PATH>, <TEXT_FILE_PATH>, <TABLE_NAME>)
     create_accessdb(r'C:\Users\<user>\Desktop\test.accdb', r'C:\Users\<user>\Documents\test.text', 'SAMPLE')
 ```
