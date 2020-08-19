@@ -185,7 +185,7 @@ class Table(object):
         return '(%s)' % ','.join(self.formater())
 
     def create_query(self):
-        return "CREATE TABLE {table_name}{columns}".format(
+        return "CREATE TABLE `{table_name}`{columns}".format(
                                             table_name=self.table_name,
                                             columns=self.built_columns())
 
@@ -200,7 +200,7 @@ class Table(object):
             columns.append(col1)
             custom_columns.append(col2)
         return """
-                INSERT INTO {table_name}({columns})
+                INSERT INTO `{table_name}`({columns})
                     SELECT {required_cols}  FROM [TEXT;HDR=YES;FMT={separator};
                                     Database={temp_dir}].{text_file}
             """.format(temp_dir=self.temp_dir,
@@ -248,7 +248,7 @@ def create_accessdb(path, text_path, table_name,
                     engine='text', sep=',', append=False, overwrite=False):
     temp_dir, text_file = os.path.split(os.path.abspath(text_path))
     with open(text_path) as fp:
-        file_columns = fp.readline().strip('\n').split(',')
+        file_columns = fp.readline().strip('\n').split(sep)
     _push_access_db(temp_dir, text_file,
                     file_columns,
                     header_columns, dtype, path, table_name,
